@@ -138,12 +138,19 @@ public class DefaultSqlSession implements SqlSession {
 
   @Override
   public <E> List<E> selectList(String statement, Object parameter) {
+    //1、 statement: 用于表示一个mapper中的select映射
+    //2、 parameter: statement执行所需的参数信息
+    //3、 用于表示查询记录范围 offset, limit
     return this.selectList(statement, parameter, RowBounds.DEFAULT);
   }
 
   @Override
   public <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds) {
     try {
+      //1. 获取MappedStatement的配置信息
+      //2. 检查参数是否为容器类型，并对容器类型进行包装
+      //3. 设置结果集处理器（ResultHandler）
+      //4. 执行query操作
       MappedStatement ms = configuration.getMappedStatement(statement);
       return executor.query(ms, wrapCollection(parameter), rowBounds, Executor.NO_RESULT_HANDLER);
     } catch (Exception e) {

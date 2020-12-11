@@ -129,6 +129,10 @@ public abstract class BaseExecutor implements Executor {
     return doFlushStatements(isRollBack);
   }
 
+  //1. 获取解析后的SQL信息，BoundSql对象中包括解析后的SQL语句、执行SQL语句所需要的参数等信息
+  //2. 根据MappedStatement、parameter、rowBounds、ResultHandler信息创建一个CacheKey
+  //3. 根据MappedStatement、parameter、rowBounds、ResultHandler、CacheKey、boundSql参数执行查询操作
+  //   委托query方法执行查询命令
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameter);
@@ -138,7 +142,13 @@ public abstract class BaseExecutor implements Executor {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
+  public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler,
+                           CacheKey key, BoundSql boundSql) throws SQLException {
+
+    //1. 检查当前数据库连接是否已经关闭，如果已经关闭抛出ExecutorException异常
+    //1. 尝试从缓存中获取查询结果
+    //2. 如果从缓存中获取到了查询结果，执行（handleLocallyCachedOutputParameters）
+    //3. 执行数据库查询命令，并返回结果
     ErrorContext.instance().resource(ms.getResource()).activity("executing a query").object(ms.getId());
     if (closed) {
       throw new ExecutorException("Executor was closed.");
@@ -149,6 +159,7 @@ public abstract class BaseExecutor implements Executor {
     List<E> list;
     try {
       queryStack++;
+      //
       list = resultHandler == null ? (List<E>) localCache.getObject(key) : null;
       if (list != null) {
         handleLocallyCachedOutputParameters(ms, key, parameter, boundSql);
@@ -317,7 +328,14 @@ public abstract class BaseExecutor implements Executor {
     }
   }
 
-  private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
+  //1. 使用CacheKey在localCache中存放EXECUTION_PLACEHOLDER标识
+  //2. 调用doQuery执行查询命令
+  //3. 从localCache中移除CacheKey存放的EXECUTION_PLACEHOLDER
+  //4. 使用CacheKey把查询结果存放到localCache中
+  //5. 如果StatementType = CALLABLE 把查询参数存放到localOutputParameterCache中
+  private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds,
+                                        ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
+          throws SQLException {
     List<E> list;
     localCache.putObject(key, EXECUTION_PLACEHOLDER);
     try {

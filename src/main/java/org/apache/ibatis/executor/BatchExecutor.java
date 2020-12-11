@@ -79,6 +79,15 @@ public class BatchExecutor extends BaseExecutor {
     return BATCH_UPDATE_RETURN_VALUE;
   }
 
+  //1. 刷新Statements
+  //2. 获取MyBatis的全局配置对象Configuration
+  //3. 使用Configuration构建一个StatementHandler处理器
+  //4. 获取数据库连接
+  //5. 从StatementHandler中获取Statement对象
+  //6. StatementHandler执行parameterize操作
+  //7. 委托StatementHandler执行query操作, 并返回结果
+  //8. 关闭statement
+
   @Override
   public <E> List<E> doQuery(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql)
       throws SQLException {

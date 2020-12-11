@@ -67,6 +67,9 @@ public class SimpleStatementHandler extends BaseStatementHandler {
     statement.addBatch(sql);
   }
 
+  //1. 获取sql，当sql是动态sql时获取的是解析后的sql
+  //2. 委托statement执行sql
+  //3. 调用结果集封装查询结果
   @Override
   public <E> List<E> query(Statement statement, ResultHandler resultHandler) throws SQLException {
     String sql = boundSql.getSql();
